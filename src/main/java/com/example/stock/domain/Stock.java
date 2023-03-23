@@ -34,6 +34,6 @@ public class Stock {
             throw new RuntimeException("foo");
         }
 
-        this.quantity = this.quantity - quantity;
+        this.quantity -= quantity;
     }
 }
