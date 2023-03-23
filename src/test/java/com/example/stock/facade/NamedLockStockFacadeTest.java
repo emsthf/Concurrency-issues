@@ -15,52 +15,47 @@ import java.util.concurrent.Executors;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-class OptimisticLockStockFacadeTest {
+class NamedLockStockFacadeTest {
 
     @Autowired
-    private OptimisticLockStockFacade optimisticLockStockFacade;
+    private NamedLockStockFacade namedLockStockFacade;
 
     @Autowired
     private StockRepository stockRepository;
 
     @BeforeEach
-    public void before() {
+    public void insert() {
         Stock stock = new Stock(1L, 100L);
 
         stockRepository.saveAndFlush(stock);
     }
 
     @AfterEach
-    public void after() {
+    public void delete() {
         stockRepository.deleteAll();
     }
 
     @Test
-    public void concurrency_issue() throws InterruptedException {
-        // 동시에 100개의 요청
+    public void 동시에_100개의요청() throws InterruptedException {
         int threadCount = 100;
-        // ExecutorService는 비동기로 실행하는 작업을 단순화하여 사용할 수 있게 도와주는 자바의 API
         ExecutorService executorService = Executors.newFixedThreadPool(32);
-        // 100번의 요청이 끝날 때까지 기다려야 하므로 CountDownLatch 사용
         CountDownLatch latch = new CountDownLatch(threadCount);
 
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    optimisticLockStockFacade.decrease(1L, 1L);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    namedLockStockFacade.decrease(1L, 1L);
                 } finally {
                     latch.countDown();
                 }
             });
         }
+
         latch.await();
 
         Stock stock = stockRepository.findById(1L).orElseThrow();
 
-        // 100 - (1 * 100) = 0
-        assertEquals(0L, stock.getQuantity());
+        // 100 - (100 * 1) = 0
+        assertEquals(0, stock.getQuantity());
     }
-
 }
